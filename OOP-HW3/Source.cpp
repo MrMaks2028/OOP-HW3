@@ -1,14 +1,13 @@
 #include <iostream>
 #include <vector>
-using namespace std;
-
 class DynamicArray {
 public:
 	DynamicArray() {}
 	DynamicArray(const DynamicArray& other) {
 		_size = other._size;
 		_capacity = other._capacity;
-		_data = new int[other._capacity];
+		delete[] _data;
+		_data = new int[_capacity];
 		for (int i = 0; i < _size; i++)
 			_data[i] = other._data[i];
 	}
@@ -40,32 +39,31 @@ public:
 	}
 	~DynamicArray() {
 		if (_data)
-			delete[] _data;
+   			delete[] _data;
 	}
 
-
-	auto at(int pos)->int& {
+	int& at(int pos) {
 		return _data[pos];
 	}
-	auto at(int pos)const->const int& {
+	const int& at(int pos)const {
 		return _data[pos];
 	}
-	auto operator[] (int i)->int& {
+	int& operator[] (int i) {
 		return _data[i];
 	}
-	auto operator[](int i)const->const int& {
+	const int& operator[](int i)const {
 		return _data[i];
 	}
-	auto front()->int& {
+	int& front() {
 		return _data[0];
 	}
-	auto front()const->const int& {
+	const int& front()const {
 		return _data[0];
 	}
-	auto back()->int& {
+	int& back() {
 		return _data[_size - 1];
 	}
-	auto back()const->const int& {
+	const int& back()const {
 		return _data[_size - 1];
 	}
 	int* data() {
@@ -87,11 +85,11 @@ public:
 		for (int i = 0; i < _size; i++)
 			tmp[i] = _data[i];
 		delete[] _data;
-		_data = new int[capacity];
+		_data = new int[_capacity + capacity];
 		for (int i = 0; i < _size; i++)
 			_data[i] = tmp[i];
 		delete[] tmp;
-		_capacity = capacity;
+		_capacity += capacity;
 	}
 	int capacity() const {
 		return _capacity;
@@ -110,7 +108,7 @@ public:
 		delete[]tmp;
 	}
 	void clear() {
-		delete[] _data;
+		_data = nullptr;
 		_size = 0;
 	}
 	void insert(int pos, int value) {
@@ -120,15 +118,15 @@ public:
 			for (int i = 0; i < pos; i++) {
 				tmp[i] = _data[i];
 			}
-			tmp[pos--] = value;
-			for (int i = pos+2; i < _size; i++) {
-				tmp[i] = _data[i];
+			tmp[pos] = value;
+			for (int i = pos+1; i < _size; i++) {
+				tmp[i] = _data[i-1];
 			}
 			delete[] _data;
-			
 			_data = new int[_size];
-			for (int i = 0; i < _size; i++)
+			for (int i = 0; i < _size; i++) {
 				_data[i] = tmp[i];
+			}
 			delete[] tmp;
 			_capacity = _size;
 		}
@@ -139,29 +137,75 @@ public:
 				tmp[i] = _data[i];
 			}
 			tmp[pos] = value;
-			for (int i = pos++; i < _size; i++) {
-				tmp[i] = _data[i];
+			for (int i = pos + 1; i < _size; i++) {
+				tmp[i] = _data[i - 1];
 			}
 			delete[] _data;
-
-			_data = new int[_capacity];
-			for (int i = 0; i < _size; i++)
+			_data = new int[_size];
+			for (int i = 0; i < _size; i++) {
 				_data[i] = tmp[i];
+			}
+			delete[] tmp;
+		}
+	}
+	void insert(int pos, int count, int value){
+		if (_size + count > _capacity) {
+			_size += count;
+			int k = 0;
+			int* tmp = new int[_size];
+			for (int i = 0; i < pos; i++) {
+				tmp[i] = _data[i];
+				k++;
+			}
+			for (int i = pos; i < _size - k; i++) {
+				tmp[i] = value;
+			}
+			for (int i = pos + count; i < _size; i++) {
+				tmp[i] = _data[i - count];
+			}
+			delete[] _data;
+			_data = new int[_size];
+			for (int i = 0; i < _size; i++) {
+				_data[i] = tmp[i];
+			}
+			delete[] tmp;
+			_capacity = _size;
+		}
+		if (_size + count <= _capacity) {
+			_size += count;
+			int k = 0;
+			int* tmp = new int[_size];
+			for (int i = 0; i < pos; i++) {
+				tmp[i] = _data[i];
+				k++;
+			}
+			for (int i = pos; i < _size - k; i++) {
+				tmp[i] = value;
+			}
+			for (int i = pos + count + 1; i < _size; i++) {
+				tmp[i] = _data[i - count];
+			}
+			delete[] _data;
+			_data = new int[_size];
+			for (int i = 0; i < _size; i++) {
+				_data[i] = tmp[i];
+			}
 			delete[] tmp;
 		}
 	}
 	void erase(int pos) {
+		int count = 0;
 		int* tmp = new int[_size];
-		for (int i = 0; i < _size; i++)
+		for (int i = 0; i < _size; i++) {
 			tmp[i] = _data[i];
+		}
 		delete[] _data;
 		_data = new int[_size - 1];
-		for (int i = 0; i < _size - 1; i++){
-			if (tmp[i] == pos)
-				continue;
+		for (int i = 0; i < pos; i++)
 			_data[i] = tmp[i];
-		}
-		_size = _size - 1;
+		for(int i = pos; i < _size - 1; i++)
+			_data[i] = tmp[i + 1];
+		_size--;
 	}
 	void erase(int first, int last){ 
 		int count = 0;
@@ -179,17 +223,6 @@ public:
 			_data[i - count] = tmp[i];
 		}
 		_size = _size - (last - first + 1);
-		/*int* tmp = new int[_size];
-		for (int i = 0; i < _size; i++)
-			tmp[i] = _data[i];
-		delete[] _data;
-		_data = new int[_size - (last - first)];
-		for (int i = 0; i < _size - (last - first); i++) {
-			if (tmp[i] >= first && tmp[i] <= last)
-				continue;
-			_data[i] = tmp[i];
-		}
-		_size = _size - (last - first);*/
 	}
 	void push_back(int value) {
 		if(_size + 1 > _capacity){
@@ -288,17 +321,17 @@ public:
 
 	}
 	void showArr() {
-		cout << "[";
+		std::cout << "[";
 		for (int i = 0; i < _size; i++)
-			cout << _data[i] << ", ";
-		cout << "\b\b]";
+			std::cout << _data[i] << ", ";
+		std::cout << "\b\b]";
 	}
 
-	DynamicArray operator= (const DynamicArray& other)
-	{
+	DynamicArray operator= (const DynamicArray& other){
 		_size = other._size;
 		_capacity = other._capacity;
-		_data = new int[other._capacity];
+		delete[] _data;
+		_data = new int[_capacity];
 		for (int i = 0; i < _size; i++)
 			_data[i] = other._data[i];
 
@@ -322,42 +355,71 @@ private:
 
 int main() {
 	setlocale(LC_ALL, "Russian");
+	using namespace std;
 
-	/*DynamicArray arr1(5, new int[5]{ 1,2,3,4,5 });
-	DynamicArray arr2(arr1);
-	DynamicArray arr3(5, new int[5]{ 6,7,8,9,10 });
-	cout << "at: " << arr1.at(0) << endl;
-	cout << "at: " << arr2.at(0) << endl;
-	cout << "Arr1 Size: " << arr1.size() << " Arr1 Capacity: " << arr1.capacity() << endl;
-	cout << "Arr2 Size: " << arr2.size() << " Arr2 Capacity: " << arr2.capacity() << endl;*/
+	DynamicArray a(5, new int[5]{ 1,2,3,4,5 });
+	DynamicArray b(10); 
+	b[0] = 10; b[1] = 20; 
+	b[2] = 30; b[3] = 40; 
+	b[4] = 50; b[5] = 60; 
+	b[6] = 70; b[7] = 80; 
+	b[8] = 90; b[9] = 100;
+	DynamicArray c = a;
+	DynamicArray d; d.reserve(20);
+	DynamicArray f(6, new int[6]{ 2,4,6,8,10,12 });
+	DynamicArray x(4, new int[4]{ 12,16,22,26 });
+	DynamicArray y;
 
-	DynamicArray ar(5, new int[5]{1,2,3,4,5});
-	cout << ar.size() << " " << ar.capacity();
-	ar.reserve(10);
-	cout << "\n\n" << ar.size() << " " << ar.capacity();
-	ar.push_back(6);
-	cout << "\n\n" << ar.size() << " " << ar.capacity();
-	cout << "\n\n";
-	ar.showArr();
-	ar.pop_back();
-	cout << "\n\n" << ar.size() << " " << ar.capacity();
-	cout << "\n\n";
-	ar.showArr();
-	ar.shrink_to_fit();
-	ar.insert(2, 10);
-	cout << "\n\n" << ar.size() << " " << ar.capacity();
-	cout << "\n\n";
-	ar.showArr();
-
-	/*vector<int> vec(2);
-	vec[0] = 1;
-	vec[1] = 2;
-	cout << vec.size() << " " << vec.capacity();
-	vec.pop_back();
-	cout << vec.size() << " " << vec.capacity();
-	vec.push_back(2);
-	cout << vec.size() << " " << vec.capacity();*/
-
+	cout << "at:  " << a.at(0) << " " << a.at(1) << " " << a.at(2) << " " << a.at(3) << " " << a.at(4) << " ";
+	cout << "\n\noperator []:  " << c[0] << " " << c[1] << " " << c[2] << " " << c[3] << " " << c[4] << " ";
+	cout << "\n\nfront:  " << a.front();
+	cout << "\n\nback:  " << c.back();
+	cout << "\n\ndata:  " << b.data();
+	cout << "\n\nempty:  " << "\"d\" " << d.empty() << " \"a\" " << a.empty();
+	cout << "\n\nsize:  " << "\"c\" " << c.size() << " \"d\" " << d.size();
+	cout << "\n\ncapacity:  " << "\"a\" " << a.capacity() << " \"b\" " << b.capacity();
+	cout << "\n\nreserve:  " << "\"a\" capacity Before reserve: " << a.capacity(); 
+	a.reserve(10);
+	cout << "\t\"a\" capacity After reserve: " << a.capacity();
+	cout << "\n\nshrink_to_fit:  " << "\"a\" capacity Before shrink_to_fit: " << a.capacity();
+	a.shrink_to_fit();
+	cout << "\t\"a\" capacity After shrink_to_fit: " << a.capacity();
+	cout << "\n\nclear:  " << "\"f\" Before clear:  size -> " << f.size() << "  "; f.showArr();
+	f.clear();
+	cout << "\t\"f\" After clear:  size -> " << f.size() << "  "; f.showArr();
+	cout << "\n\ninsert(pos, value):  " << "\"a\" Before insert: "; a.showArr();
+	a.insert(4, 100);
+	cout << "\t\"a\" After insert: "; a.showArr();
+	cout << "\n\nerase(pos):  " << "\"a\" Before erase: "; a.showArr();
+	a.erase(4);
+ 	cout << "\t\"a\" After erase: "; a.showArr();
+	cout << "\n\ninsert(pos, count, value):  " << "\"b\" Before insert: "; b.showArr();
+	b.insert(5, 10, 200);
+	cout << "\t\"b\" After insert: "; b.showArr();
+	cout << "\n\nerase(first, last):  " << "\"b\" Before erase: "; b.showArr();
+	b.erase(5, 14);
+	cout << "\t\"b\" After erase: "; b.showArr();
+	cout << "\n\npush_back:  " << "\"d\" Before push_back: "; d.showArr();
+	d.push_back(1); d.push_back(2); d.push_back(3); d.push_back(4); d.push_back(5);
+	cout << "\t\"d\" After push_back: "; d.showArr();
+	cout << "\n\nemplace_back:  " << "\"d\" Before emplace_back: "; d.showArr();
+	d.emplace_back(6); d.emplace_back(7); d.emplace_back(8); d.emplace_back(9); d.emplace_back(10);
+	cout << "\t\"d\" After push_back: "; d.showArr();
+	cout << "\n\npop_back:  " << "\"d\" Before pop_back: "; d.showArr();
+	d.pop_back(); d.pop_back(); d.pop_back(); d.pop_back(); d.pop_back();
+	cout << "\t\"d\" After push_back: "; d.showArr();
+	cout << "\n\nresize:  " << "\"c\" Before resize: "; c.showArr();
+	c.resize(10);
+	cout << "\t\"c\" After resize: "; c.showArr();
+	cout << "\n\nswap:  " << "Before swap: \"a\" = "; a.showArr();
+	cout << "\t\"b\" = "; b.showArr();
+	a.swap(b);
+	cout << "\nAfter swap: \"a\" = "; a.showArr();
+	cout << "\t\"b\" = "; b.showArr();
+	cout << "\n\nMove semantics: "; 
+	cout << "  Before move \"x\" = "; x.showArr(); cout << "\t \"y\" = "; y.showArr();
+	y = move(x);
+	cout << "\n\nAfter move \"x\" = "; x.showArr(); cout << "\t \"y\" = "; y.showArr();
 
 	return 0;
 }
